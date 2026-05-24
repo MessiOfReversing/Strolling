@@ -1,0 +1,24 @@
+pwndbg> disass main
+Dump of assembler code for function main:
+   0x0000000000001209 <+0>:     endbr64 
+   0x000000000000120d <+4>:     push   rbp
+   0x000000000000120e <+5>:     mov    rbp,rsp
+   0x0000000000001211 <+8>:     push   rbx
+   0x0000000000001212 <+9>:     sub    rsp,0x18
+   0x0000000000001216 <+13>:    mov    rax,QWORD PTR fs:0x28
+   0x000000000000121f <+22>:    mov    QWORD PTR [rbp-0x18],rax
+   0x0000000000001223 <+26>:    xor    eax,eax
+   0x0000000000001225 <+28>:    mov    eax,0x0
+   0x000000000000122a <+33>:    call   0x1110 <rand@plt>
+   0x000000000000122f <+38>:    mov    DWORD PTR [rbp-0x1c],eax
+pwndbg> x/x $rbp-0x1c
+0x7ffe83cdfdc4: 0x6b8b4567
+pwndbg> p 0x6b8b4567 ^ 0xcafebabe
+$1 = 2708864985
+pwndbg> q
+warning: Could not rename /home/random/.gdb_history-gdb1309117~ to /home/random/.gdb_history: No such file or directory
+random@ubuntu:~$ ./random
+2708864985
+Good!
+m0mmy_I_can_predict_rand0m_v4lue!
+random@ubuntu:~$ 
