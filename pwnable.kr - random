@@ -22,3 +22,28 @@ random@ubuntu:~$ ./random
 Good!
 m0mmy_I_can_predict_rand0m_v4lue!
 random@ubuntu:~$ 
+
+//아래는 소스 코드입니다.
+#include <stdio.h>
+
+int main(){
+        unsigned int random;
+        random = rand();        // random value!
+
+        unsigned int key=0;
+        scanf("%d", &key);
+
+        if( (key ^ random) == 0xcafebabe ){
+                printf("Good!\n");
+                setregid(getegid(), getegid());
+                system("/bin/cat flag");
+                return 0;
+        }
+
+        printf("Wrong, maybe you should try 2^32 cases.\n");
+        return 0;
+}
+앞으로 코딩 하실때 unsigned int로 key 받은경우 뒤에 specifier가 %u로 쌍을 이루어야 한다는거 기억해두시면 좋겠습니다.
+%d할거면 그냥 int하는게 맞습니다.
+
+rand가 잘못된건가? rand 취약점인가? 했는데 아니었네요.
