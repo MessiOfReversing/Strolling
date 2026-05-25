@@ -1,0 +1,290 @@
+4. Read
+
+The read system call, implemented as the read() function reads the specified amount of bytes cnt of input into the memory area indicated by buf from the file indicated by the file descriptor fd. A successful read() updates the access time for the file. The read() function is also defined inside the <unistd.h> header file.
+
+Syntax
+
+read (fd, buf, cnt);
+Parameters
+
+fd: file descriptor of the file from which data is to be read.
+buf: buffer to read data from.
+cnt: length of the buffer.
+Return Value
+
+Return number of bytes read on success.
+Return 0 on reaching the end of file.
+Return -1 on error.
+Return -1 on signal interrupt.
+
+/이건 geeks for geeks 에서 가져온 부분. 먼저 말씀드리자면 설명에 틀린부분이 있습니다./
+/아래는 소스코드/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+int main(int argc, char* argv[], char* envp[]){
+        printf("Welcome to pwnable.kr\n");
+        printf("Let's see if you know how to give input to program\n");
+        printf("Just give me correct inputs then you will get the flag :)\n");
+
+        // argv
+        if(argc != 100) return 0;
+        if(strcmp(argv['A'],"\x00")) return 0;
+        if(strcmp(argv['B'],"\x20\x0a\x0d")) return 0;
+        printf("Stage 1 clear!\n");     
+
+코드가 제 눈에는 좀 이상하게 보입니다. 보통 argv[0], argv[1] 이런식으로 캐릭터 각각의 n번째 자리를 가리키는 스타일이어야 하는게 아닌지..?
+https://stackoverflow.com/questions/56871241/what-is-the-meaning-of-argva-in-c
+위의 게시글을 보니 A는 10진수에서 65, b는 66이니 그 각각으로 바꾸어 읽는 방식이라고 합니다.
+
+int main(int argc, char* argv[], char* envp[]) 여기 보니까 char* argv[]네요. argv[65]랑 [66]에 각각 넣어주면 *이 있기때문에 입력한 내용물을 읽어주겠습니다.
+
+
+        // stdio
+        char buf[4];
+        read(0, buf, 4);
+        if(memcmp(buf, "\x00\x0a\x00\xff", 4)) return 0;
+        read(2, buf, 4);
+        if(memcmp(buf, "\x00\x0a\x02\xff", 4)) return 0;
+        printf("Stage 2 clear!\n");
+
+Syntax
+memcmp() is a standard library function defined in <string.h> header file in C.
+
+memcmp( p1, p2, n);
+Parameters:
+
+p1 and p2: Pointers to the memory block to compare.
+n: Number of bytes to compare starting from the beginning.
+0: Both memory block are equal upto n bytes.
+<0: First block is less then to second block upto n bytes.
+>0: First block is greater than to second block upto n bytes.
+
+따라서 if(memcmp(buf, "\x00\x0a\x00\xff", 4)) return 0; 는 buf를 리틀앤디언 기준으로 앞 4바이트까지랑 \x00\x0a\x00\xff 랑 비교해서 buf쪽이 더 크다면 0보다 큰값이 나오고, equal하면 0이 반환되는군요. 
+
+read(2, buf, 4);
+if(memcmp(buf, "\x00\x0a\x02\xff", 4)) return 0;
+        printf("Stage 2 clear!\n");
+에서는 \x02에서 읽는거네요. 근데 이게 argv[2]가 아니라 \x02라서 정확히 페이로드가 어때야할지 생각이 떠오르는게 없습니다.
+
+방금 이거 적으면서 알아보니 fd 자리에 들어가는건 16진수 숫자같은 그런 값이 아니라 fd 번호였네요.
+
+FD 번호 0 : stdin : 키보드 입력받는 통로
+1: stdout : 일반적인 내용을 출력하는 통로
+2: stderr : 에러 메시지를 출력하는 통로
+
+"그럼 에러 메시지만큼을 buf에서 4바이트만 읽어오라는 의미일까?" << 이건 틀린 생각입니다. 
+https://www.ibm.com/docs/en/zos/2.5.0?topic=scd-read
+ibm 피셜은 아래와 같은데요
+
+Parameters
+fd
+The file descriptor (a number) for the file to be read.
+variable
+The name of the buffer into which the data is to be read.
+length
+The maximum number of characters to read. After the read completes, the length of variable is the number of bytes read. This value is also returned in RETVAL.
+
+한문장으로는 "fd에서 읽은대로 buffer에 넣는다. 그걸 정해진 길이대로" 라고 줄일 수 있겠습니다.
+따라서 Memcmp는 equal이면 0을 반환하지만 그건 거짓인 값의 처리로 보여지기 때문에 해당 if함수의 끝인 return0까지 도달하지 못하고 두번째 memcmp인 fd 2인경우로 이어져간다는 의미라는걸 감안한다면 buf에 $(echo -en "\x00\x0a\x02\xff") 하면 될것 같습니다. 참고로 -e는 16진수 표기인 \x를 의도대로 1바이트씩 읽게 시키는 장치입니다.
+
+        // env
+        if(strcmp("\xca\xfe\xba\xbe", getenv("\xde\xad\xbe\xef"))) return 0;
+        printf("Stage 3 clear!\n");
+        
+strcmp("\xca\xfe\xba\xbe", getenv("\xde\xad\xbe\xef")) 여기서 보면 getenv("\xde\xad\xbe\xef")랑 "\xca\xfe\xba\xbe"랑 비교중입니다.
+getenv라고 한다면 그건 시스템의 환경변수를 읽어오는 값인데, 이런 이름의 환경변수가 있다면 거기에 할당된 값을 내놓습니다. 그게 "\xca\xfe\xba\xbe"랑 같느냐는 의미네요.
+
+        // file
+        FILE* fp = fopen("\x0a", "r");
+        if(!fp) return 0;
+        if( fread(buf, 4, 1, fp)!=1 ) return 0;
+        if( memcmp(buf, "\x00\x00\x00\x00", 4) ) return 0;
+        fclose(fp);
+        printf("Stage 4 clear!\n");     
+
+fopen("\x0a", "r"); 이건 \x0a 라는 이름의 파일을 r(읽기모드)로 열어서 보겠다는 의미입니다.
+fread(buf, 100, 5, fp); // "100바이트 크기의 데이터(size)를 5개(nmemb) 읽어라"
+fread는 이렇게 read랑 인자수도 다르고 읽는 순서도 다르네요. read는 syscall이고, fread는 c언어 함수인것도 차이점이겠습니다.
+따라서 if( fread(buf, 4, 1, fp)!=1 ) return 0; 는 fd에서 4바이트 크기 데이터 하나를 읽고 buf에 저장하라는 의미.
+if( memcmp(buf, "\x00\x00\x00\x00", 4) ) return 0; 에서는 buffer에서 읽어올 4바이트 문자열이 \x00\x00\x00\x00랑 일치한다면~ 이라는 의미. 따라서 그것이 정확히 일치해야 0이 반환되고 통과되므로 이걸 감안해야할듯.
+
+
+        // network
+        int sd, cd;
+        struct sockaddr_in saddr, caddr;
+        sd = socket(AF_INET, SOCK_STREAM, 0);
+        if(sd == -1){
+                printf("socket error, tell admin\n");
+                return 0;
+        }
+struct sockaddr_in saddr, caddr;는 처음보네요.
+Struct sockaddr_in saddr, caddr; 의 결과로 생기는건 sockaddr_in, saddr, caddr 세 구조체가 아니라 sockaddr_in의 멤버 구성을 따르는 saddr, caddr 둘입니다.
+https://stackoverflow.com/questions/42641936/what-does-struct-sockaddr-in-servaddr-clientaddr-mean
+여기 참고했습니다.
+
+struct sockaddr_in {
+    short            sin_family;   // e.g. AF_INET, AF_INET6
+    unsigned short   sin_port;     // e.g. htons(3490)
+    struct in_addr   sin_addr;     // see struct in_addr, below
+    char             sin_zero[8];  // zero this if you want to
+};
+
+이게 기초 구조라서 바꾸고싶은 부분만 이렇게 아래처럼
+
+struct in_addr {
+    unsigned long s_addr;          // load with inet_pton()
+};
+
+멤버 자리에 적어주는 방식이네요.
+
+꼭 이렇게 구조체 형태가 아니더라도 아제의 실제 이 문제 소스코드처럼 .으로 접근해서 할당해도 되는가봅니다.
+
+        saddr.sin_family = AF_INET;
+        saddr.sin_addr.s_addr = INADDR_ANY;
+        saddr.sin_port = htons( atoi(argv['C']) );
+        if(bind(sd, (struct sockaddr*)&saddr, sizeof(saddr)) < 0){
+                printf("bind error, use another port\n");
+                return 1;
+        }
+
+https://www.ibm.com/docs/en/i/7.4.0?topic=family-af-inet-address 여기 보시면
+For a socket application that uses the Internet Protocol version 4 (IPv4), the AF_INET address family uses the sockaddr_in address structure changes to be compatible with BSD 4.4/ UNIX 98 specifications. For the sockaddr_in address structure, these differences are summarized in the table: 라는 말이 나오네요. 알고 싶던 AF_INET 이야기가 나와서 읽어봤더니 이거 뭐.. 새로운 개념만 나오고 더 어려워지기만 하네요..
+
+일단 This address family provides interprocess communication between processes that run on the same system or on different systems.라는점.
+
+그리고 Addresses for AF_INET sockets are IP addresses and port numbers. You can specify an IP address for an AF_INET socket either as an IP address (such as 130.99.128.1) or in its 32–bit form (X'82638001'). 라는점 둘이 그나마 이해는 되는..
+
+간단하게 saddr.sin_family = AF_INET; 로 saddr의 sin_family엔 AF_INET 할당시키고, sin_port엔 htons( atoi(argv['C']) ); 할당시키는구나~ 까지는 알겠습니다. htons는 어떤 숫자를 받든 그걸 네트워크 표준에 맞게 (예를들어 포트번호에 입력하는 "2222" 이것처럼) 바꿔주는 역할.
+따라서 argv[67]에 넣는 문자열을 10진수로 읽는 atoi가 받는대로 그걸 포트번호로 읽는 의도네요.
+
+if(bind(sd, (struct sockaddr*)&saddr, sizeof(saddr)) < 0){
+                printf("bind error, use another port\n");
+                return 1;
+        }
+        
+bind <<< 이건 https://www.ibm.com/docs/en/zvm/7.2.0?topic=functions-bind 여기 보면
+
+SOCKET
+(
+'
+BIND
+'
+,
+socketid
+,
+socketname
+)
+Purpose
+Use the Bind function to assign a unique local name (network address) to a socket. When you create a socket with the Socket function, the socket does not have a name associated with it, but it does belong to an addressing family. The form of the name you assign to the socket with the Bind function depends on the addressing family. The Bind function also allows servers to specify the network interfaces from which they want to receive UDP packets and TCP connection requests.
+
+Parameters
+socketid
+is the identifier of the socket.
+소켓 아이디를 먼저 넣고
+socketname
+is the local name (network address) to be assigned to the socket. The name consists of three parts:
+소켓 네임을 두번째 패러미터로 넣는데, 아래 세 파트로 이름이 만들어졌다네요.
+domain
+The addressing family of the socket. This must be AF_INET (or the equivalent decimal value 2).
+portid
+The port number of the socket. This must be either a non-negative integer between 0 and 65535 or INPORT_ANY.
+ipaddress
+The IP address of the socket. This must be one of the following:
+Dotted decimal address of the local network interface
+INADDR_BROADCAST
+INADDR_ANY
+음
+이렇다네요.
+
+if(bind(sd, (struct sockaddr*)&saddr, sizeof(saddr)) < 0) 랑 비교해보면서 천천히 읽어보겠습니다.
+소켓 아이디는 sd라고 되어있는거보니 처음에 선언한 int sd, cd; 중 sd를 소켓 아이디로 이제서야 쓰는거구나 하고 이해가 되네요.
+뒤에는 순서대로 그런 sd랑 saddr 크기만큼 (struct sockaddr*)&saddr 를 인자로 bind해서 반환되는 값이 0보다 작다면 이라는 뜻이네요.
+ printf("bind error, use another port\n");
+                return 1;
+이라서 작다면 에러니 0보다는 크거나 같아야겠습니다.
+
+Return Values
+If successful, this function returns a string containing only return code 0. If unsuccessful, this function returns a string containing a nonzero return code, an error name, and an error message.
+라고 설명이 되어있는걸 보니. 반환되는 값이 0이어야 겠습니다.
+                
+        
+        listen(sd, 1);
+        int c = sizeof(struct sockaddr_in);
+        cd = accept(sd, (struct sockaddr *)&caddr, (socklen_t*)&c);
+        if(cd < 0){
+                printf("accept error, tell admin\n");
+                return 0;
+        }
+
+listen()은 https://www.ibm.com/docs/en/zos/3.1.0?topic=calls-listen 참고해보니
+#include <manifest.h>
+#include <socket.h>
+int listen(int s, int backlog)
+로 쓴다는걸 알게되었습니다.
+
+Parameter
+Description
+s
+Socket descriptor
+backlog
+Maximum queue length for pending connections
+라네요.
+
+읽어보니 listen(sd, 1); 라는 말은 맥시멈 큐가 1인 소켓 descriptor로 설정한다는 의미네요.
+c에다가 딱 구조체만큼만 공간을 확보하고
+(struct sockaddr *)&caddr 를 하는데, 이건 caddr 구조체라는 이 변수의 주소값을 (struct sockaddr *)타입으로 바꾼다는 의미입니다. 이걸 overthewire에선 narnia쯤에서 많이 봤었는데 말이죠. 그냥 주소 형태를 (struct sockaddr *)류의 형태로 바꾼다는 의미라고 이해했습니다. 정확히 어떤 변환인지는 잘 모르겠습니다.
+
+#include <manifest.h>
+#include <bsdtypes.h>
+#include <socket.h>
+#include <in.h>
+int accept(int s, struct sockaddr *addr, int *addrlen)
+
+이게 기본 템플릿이네요. 
+s : 소켓 디스크립터.
+addr : accept() 함수가 반환되기 전에 채워지는 연결하려는 클라이언트의 소켓 주소입니다. 
+여기서 이 addr 의 형식은 클라이언트가 속한 도메인에 따라 결정됩니다. addr은 addr 과 addrlen이 모두 0이 아닌 값일 때만 accept() 함수에서 지정됩니다 .
+addrlen : 처음에 addr 이 가리키는 저장소의 크기를 바이트 단위로 나타내는 정수를 가리켜야 합니다 . addr 이 NULL인 경우 addrlen은 무시되며 NULL일 수 있습니다.
+
+그러면 accept(sd, (struct sockaddr *)&caddr, (socklen_t*)&c); 의 의미가 무엇일지 알 수 있을것 같습니다.
+디스크립터는 항상 뭔가를 읽어"오는" "통로"였는데 이번에도 규격에 잘 맞춘 caddr주소를 sd를 통해서 클라이언트 한테서 데이터를 잘 받아와서 또 마찬가지로 규격에 잘 맞춘 int c = sizeof(struct sockaddr_in);로 할당했던 크기에 받은 정보를 집어넣는 그런 모양같습니다.
+
+        
+        if( recv(cd, buf, 4, 0) != 4 ) return 0;
+        if(memcmp(buf, "\xde\xad\xbe\xef", 4)) return 0;
+        printf("Stage 5 clear!\n");
+
+https://www.ibm.com/docs/en/zos/2.5.0?topic=functions-recv-receive-data-socket
+에서 확인 가능한데요, recv란것은 
+#define _OE_SOCKETS
+#include <sys/socket.h>
+
+int recv(int socket, char *buffer, int length, int flags);
+로 작성하는게 기본 템플릿이고, 각 내용은 
+Parameter
+Description
+socket
+The socket descriptor.
+buf
+The pointer to the buffer that receives the data.
+len
+The length in bytes of the buffer pointed to by the buf parameter. If the MSG_CONNTERM flag is set, the length of the buffer must be zero.
+flags
+The flags parameter is set by specifying one or more of the following flags. If more than one flag is specified, the logical OR operator ( | ) must be used to separate them. The MSG_CONNTERM flag is mutually exclusive with other flags.
+MSG_CONNTERM
+Requests that the function completes only when a TCP connection is terminated. It is valid for TCP sockets only. Other normal receive requests are also completed. The application must be able to deal with the fact that a normal receive and this special connection termination receive might be driven in parallel.
+입니다.
+
+따라서 한번 읽어보자면, "
+     
+        // here's your flag
+        setregid(getegid(), getegid());
+        system("/bin/cat flag");        
+        return 0;
+}
+
