@@ -1,0 +1,52 @@
+def solution(m, n, h, w, drops):
+    
+    low = 0
+    high = len(drops)
+    
+    best_time = -1
+    best_r, best_c = -1, -1
+    
+    // 만약 위치를 못찾는다면 반환되지 않게 음수인 -1로 기본 시작수를 둔것임.
+
+    def check(mid):
+
+    // 파이썬은 함수나 변수 선언해도 나중에 쓰일때가 되어서야 어떻게 선언되었었나 하고 확인하기 때문에 선언하기 전에 mid를 사용해도 된다.
+
+        given_lattice = [[0] * n for _ in range(m)]
+        for i in range(mid):
+            r, c = drops[i]
+            given_lattice[r][c] = 1
+       
+        prefix = [[0] * (n + 1) for _ in range(m + 1)]
+        for r in range(m):
+            for c in range(n):
+                prefix[r + 1][c + 1] = (given_lattice[r][c] 
+                                        + prefix[r][c + 1] 
+                                        + prefix[r + 1][c] 
+                                        - prefix[r][c])
+      
+        for r in range(m - h + 1):
+            for c in range(n - w + 1):
+                r2, c2 = r + h, c + w
+                total_drops = (prefix[r2][c2] 
+                               - prefix[r][c2] 
+                               - prefix[r2][c] 
+                               + prefix[r][c])
+                
+                if total_drops == 0:
+                    return True, (r, c)
+                    
+        return False, None
+    
+    while low <= high:
+        mid = (low + high) // 2
+        possible, pos = check(mid)
+        
+        if possible:
+            best_time = mid
+            best_r, best_c = pos
+            low = mid + 1
+        else:
+            high = mid - 1
+
+    return [best_r, best_c]
